@@ -8,6 +8,7 @@
   "scripts": {
     "db:check": "tsx --env-file=.env src/check-connections.ts",
     "ingest": "tsx --env-file=.env src/ingest.ts",
+    "normalize": "tsx --env-file=.env src/normalize.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

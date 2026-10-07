@@ -1,3 +1,8 @@
 .env
 node_modules/
 dist/
+
+# Query and script output: may contain real addresses, and is reproducible.
+output/*
+!output/.gitkeep
+*.out.txt
