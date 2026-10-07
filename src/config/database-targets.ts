@@ -1,20 +1,26 @@
 const { LOCAL_DATABASE_URL, NEON_DATABASE_URL } = process.env;
 
+export type DatabaseTargetName = "local" | "neon";
+
 export interface IDatabaseTarget {
-  name: "local" | "neon";
+  name: DatabaseTargetName;
   connectionString: string;
 }
 
-export function getDatabaseTargets(): IDatabaseTarget[] {
-  if (!LOCAL_DATABASE_URL) {
-    throw new Error("LOCAL_DATABASE_URL is not set in .env.");
-  }
-  if (!NEON_DATABASE_URL) {
-    throw new Error("NEON_DATABASE_URL is not set in .env.");
+const connectionStrings = {
+  local: LOCAL_DATABASE_URL,
+  neon: NEON_DATABASE_URL,
+} as const satisfies Record<DatabaseTargetName, string | undefined>;
+
+export function getDatabaseTarget(name: DatabaseTargetName): IDatabaseTarget {
+  const connectionString = connectionStrings[name];
+  if (!connectionString) {
+    throw new Error(`${name.toUpperCase()}_DATABASE_URL is not set in .env.`);
   }
 
-  return [
-    { name: "local", connectionString: LOCAL_DATABASE_URL },
-    { name: "neon", connectionString: NEON_DATABASE_URL },
-  ];
+  return { name, connectionString };
+}
+
+export function getDatabaseTargets(): IDatabaseTarget[] {
+  return [getDatabaseTarget("local"), getDatabaseTarget("neon")];
 }
