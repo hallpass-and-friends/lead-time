@@ -257,7 +257,23 @@ ON CONFLICT (source_id, source_license_key) DO UPDATE SET
 
 ANALYZE core.address, core.business_license;
 
--- 7. Report -------------------------------------------------------------------
+-- 7. Remove addresses nothing refers to ---------------------------------------
+-- A rerun can change how an address parses, which leaves the old premises row
+-- behind with nothing pointing to it. Every table that refers to an address is
+-- listed; if a new one is added later and missed here, its foreign key makes this
+-- delete fail loudly instead of removing an address still in use.
+
+WITH removed AS (
+  DELETE FROM core.address a
+  WHERE NOT EXISTS (SELECT 1 FROM core.permit p           WHERE p.address_id = a.address_id)
+    AND NOT EXISTS (SELECT 1 FROM core.business_license b WHERE b.address_id = a.address_id)
+    AND NOT EXISTS (SELECT 1 FROM lead.signal s           WHERE s.address_id = a.address_id)
+    AND NOT EXISTS (SELECT 1 FROM lead.lead l             WHERE l.address_id = a.address_id)
+  RETURNING 1
+)
+SELECT 'cleanup' AS report, count(*)::int AS unreferenced_addresses_removed FROM removed;
+
+-- 8. Report -------------------------------------------------------------------
 
 CREATE TEMP TABLE parse_outcome ON COMMIT DROP AS
 SELECT l.record_id, l.address_raw,

@@ -130,7 +130,23 @@ LEFT JOIN ref.contact_type_map m ON m.source_id = c.source_id AND m.contact_type
 
 ANALYZE core.street, core.address, core.permit, core.party, core.permit_party;
 
--- 7. Report ------------------------------------------------------------------
+-- 7. Remove addresses nothing refers to ---------------------------------------
+-- A rerun can change how an address parses, which leaves the old premises row
+-- behind with nothing pointing to it. Every table that refers to an address is
+-- listed; if a new one is added later and missed here, its foreign key makes this
+-- delete fail loudly instead of removing an address still in use.
+
+WITH removed AS (
+  DELETE FROM core.address a
+  WHERE NOT EXISTS (SELECT 1 FROM core.permit p           WHERE p.address_id = a.address_id)
+    AND NOT EXISTS (SELECT 1 FROM core.business_license b WHERE b.address_id = a.address_id)
+    AND NOT EXISTS (SELECT 1 FROM lead.signal s           WHERE s.address_id = a.address_id)
+    AND NOT EXISTS (SELECT 1 FROM lead.lead l             WHERE l.address_id = a.address_id)
+  RETURNING 1
+)
+SELECT 'cleanup' AS report, count(*)::int AS unreferenced_addresses_removed FROM removed;
+
+-- 8. Report ------------------------------------------------------------------
 
 SELECT 'totals' AS report,
   (SELECT count(*)::int FROM src)                                         AS raw_records,
