@@ -9,6 +9,7 @@
     "db:check": "tsx --env-file=.env src/check-connections.ts",
     "ingest": "tsx --env-file=.env src/ingest.ts",
     "normalize": "tsx --env-file=.env src/normalize.ts",
+    "resolve": "tsx --env-file=.env src/resolve.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
